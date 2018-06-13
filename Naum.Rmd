@@ -1,0 +1,144 @@
+---
+title: "Naum-Samples"
+author: "Fernando Gutierrez"
+date: "April 19, 2018"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+library(lattice)
+library("cluster")
+library("factoextra")
+library(ggplot2)
+library("magrittr")
+library(mlbench)
+library("vcd")
+library("lattice")
+library("randomForest")
+library("party")
+library("partykit")
+library("mboost")
+library("TH.data")
+library("rpart")
+library(cluster)
+library(dendextend)
+library(factoextra)
+```
+
+### The elemental data was collected using a handheld XRF gun at two energy settings. Major elements were detected using a lower voltage setting. Traces were scanned using a high energy setting. Each sample was scanned for two minutes. In the table below, for example, the readings Buff Berea_1 and 2 belong to the same sample.  
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+test.cluster<-read.csv("naum.csv", header = T)
+head(test.cluster, n=10)
+```
+
+
+# Distance Matrix
+* A distance matrix is a square matrix (two-dimensional array) containing the distances, taken pairwise, between the elements of a set.
+
+* The 45 degree line pairs each element to itself. For example, sample 2-3-7-001 meets itself at top right corner and it is color coded  blue with the least transparancy in the heat map. The heat map represents the degree of similarity between elements of the matrix. The color bar value represent the distance. In this image, bright blue denotes a distance of 0 and bright Orange is maximal distance.
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+test.cluster<-read.csv("naum.csv", header = T)
+
+
+row.names(test.cluster)<-test.cluster$Sample
+
+
+test_mod<- test.cluster[,-1] %>%
+  na.omit() %>%          # Remove missing values (NA)
+  scale()
+res.distance <- get_dist(test_mod, stand = TRUE, method = "pearson")
+
+fviz_dist(res.distance, 
+   gradient = list(low = "#00AFBB", mid = "white", high = "#FC4E07"))
+```
+
+# Optimal Number Of Clusters Plot
+
+### The optimal number of clusters plot calculates number of cluster in the data. The gap statistic technique uses the output of any "clustering algorithm", e.g. Kmeans, compares the change in within-cluster dispersion with the expected under an appropiate reference null distribution. 
+
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+library("factoextra")
+fviz_nbclust(test_mod, kmeans, method = "gap_stat")
+```
+# K-Means Plot
+
+### The data in our set are clustered by the k-means method, which aims to partition the points into k groups such that the sum of squares from points to the assigned cluster centers is minimized
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+
+set.seed(123)
+km.res1 <- kmeans(test_mod, 6, nstart = 25)
+# Visualize
+library("factoextra")
+fviz_cluster(km.res1, data = test_mod,
+             ellipse.type = "convex",
+             palette = "jco",
+             ggtheme = theme_light())
+```
+# Heirarchical Clustering
+
+### This function performs a hierarchical cluster analysis using a set of dissimilarities for the n objects being clustered. Initially, each object is assigned to its own cluster and then the algorithm proceeds iteratively, at each stage joining the two most similar clusters, continuing until there is just a single cluster. The vertical scale represents the numerical distance between samples. 
+
+#### Hierarchical clustering using the "complete method"
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+#row.names(test.cluster)<-test.cluster$X
+
+test.hcNaum <- test.cluster %>%
+                  
+  dist(method = "euclidean") %>% # Compute dissimilarity matrix
+  hclust(method = "complete")     # Compute hierachical clustering
+# Visualize using factoextra
+# Cut in 4 groups and color by groups
+fviz_dend(test.hcNaum, k = 5, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+          color_labels_by_k = TRUE, # color labels by groups
+          rect = TRUE # Add rectangle around groups
+          )
+```
+
+#### Hierarchical clustering using the "average method"
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+
+test.hcNaum <- test.cluster %>%
+                  
+  dist(method = "euclidean") %>% # Compute dissimilarity matrix
+  hclust(method = "average")     # Compute hierachical clustering
+# Visualize using factoextra
+# Cut in 4 groups and color by groups
+fviz_dend(test.hcNaum, k = 5, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+          color_labels_by_k = TRUE, # color labels by groups
+          rect = TRUE # Add rectangle around groups
+          )
+
+
+```
+
+#### Hierarchical clustering using the "complete method"
+
+```{r echo = FALSE, message = FALSE, warning = FALSE}
+#row.names(test.cluster)<-test.cluster$X
+
+test.hcNaum <- test.cluster %>%
+                  
+  dist(method = "euclidean") %>% # Compute dissimilarity matrix
+  hclust(method = "single")     # Compute hierachical clustering
+# Visualize using factoextra
+# Cut in 4 groups and color by groups
+fviz_dend(test.hcNaum, k = 5, # Cut in four groups
+          cex = 0.5, # label size
+          k_colors = c("#2E9FDF", "#00AFBB", "#E7B800", "#FC4E07"),
+          color_labels_by_k = TRUE, # color labels by groups
+          rect = TRUE # Add rectangle around groups
+          )
+```
+
